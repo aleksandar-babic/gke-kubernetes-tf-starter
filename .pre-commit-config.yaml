@@ -1,0 +1,35 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.1.0
+    hooks:
+      # Git style
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: check-vcs-permalinks
+      - id: forbid-new-submodules
+
+      # Common errors
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+        args: [ --markdown-linebreak-ext=md ]
+      - id: check-yaml
+      - id: check-merge-conflict
+      - id: check-executables-have-shebangs
+
+      # Cross platform
+      - id: check-case-conflict
+      - id: mixed-line-ending
+        args: [ --fix=lf ]
+
+  - repo: git://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.43.0
+    hooks:
+      - id: terraform_fmt
+      - id: terraform_docs
+      - id: terraform_validate
+      - id: terraform_tflint
+      - id: checkov
+        args: [ "-d", ".", "--skip-path", ".terraform" ]
+      - id: terraform_tflint
+      - id: terraform_tfsec
+        args: [ "--args=--exclude-downloaded-modules" ]
