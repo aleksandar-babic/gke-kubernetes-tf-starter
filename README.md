@@ -1,9 +1,262 @@
 # gke-kubernetes-tf-starter
-Terraform module to provision battle-tested, batteries-included GCP GKE Cluster.
 
-**README IN PROGRESS**
+[![Main workflow action](https://github.com/aleksandar-babic/gke-kubernetes-tf-starter/actions/workflows/workflow.yaml/badge.svg)](https://github.com/aleksandar-babic/gke-kubernetes-tf-starter/actions/workflows/workflow.yaml)
 
-# Module details
+Terraform module to provision battle-tested, batteries-included and secure GCP GKE Cluster with nginx-ingress and fully
+automated DNS (external-dns) + TLS/SSL management (cert-manager + Letsencrypt).
+
+The module deploys following resources:
+
+* Custom VPC Network with:
+    * GKE subnet (including pods and services secondary ranges)
+    * CloudNat [optional]
+* OpenVPN Server [optional]
+    * With built-in user management (more details below) controllable through variables
+* Cloud DNS zones
+    * Controlled dynamically through variables
+* GKE Standard cluster with:
+    * Optional `regional` or `zonal` cluster modes
+    * Optional `private` cluster type
+    * Dynamic node pools controlled through the variables
+    * Dynamic cluster autoscaler configuration
+    * HPA enabled
+    * VPA disabled
+    * Removed default node pools
+    * Master Authorized Networks - GKE subnet by default, optional additional configurable through variable
+* [Helm charts](./modules/helm-charts) deployed in the cluster [optional]:
+    * [ingress-nginx](https://kubernetes.github.io/ingress-nginx/) external [optional]
+    * [ingress-nginx](https://kubernetes.github.io/ingress-nginx/) internal [optional]
+    * [cert-manager](https://cert-manager.io/) configured with Letsencrypt prod ACME ClusterIssuer through DNS01 solver
+    * [external-dns](https://github.com/kubernetes-sigs/external-dns) with Cloud DNS
+
+## Provisioning
+
+The module is using GCP Storage Bucket as state backend.
+
+It is recommended to use [`tfenv`](https://github.com/tfutils/tfenv) and setup appropriate Terraform version defined
+in `.terraform-version` file in each environment modules.
+
+Additionally, [`gcloud`](https://cloud.google.com/sdk/gcloud/) with appropriate permissions to project is required in
+order to provision any resources.
+
+### Development
+
+#### Local
+
+The following tools have to be installed in order to run [pre-commit](https://pre-commit.com/) successfully:
+
+* [checkov](https://github.com/bridgecrewio/checkov)
+* [tfsec](https://aquasecurity.github.io/tfsec/v1.1.5/)
+* [tflint](https://github.com/terraform-linters/tflint)
+* [terraform-docs](https://terraform-docs.io/)
+
+Setup of the git hooks can be done with `pre-commit install`. To force pre-commit checks on all files
+run `pre-commit run -a`.
+
+#### Github Actions
+
+This module is using Github Actions to run `pre-commit` on `push` and `pull-request` events. The workflows can be
+found [here](.github/workflows).
+
+### Deployment
+
+The following steps are required to deploy:
+
+```shell
+terraform init -backend-config="bucket=<state_storage_bucket_name>"
+
+terraform apply
+```
+
+The module sets common values for the variables in `terraform.auto.tfvars`, additional variable overrides might be
+required, examples shown below:
+
+#### Private cluster
+
+```terraform
+# Variables needed for deployment of the private cluster
+provider_project_id    = "<gcp_project_id>"
+cloud_dns_zone_domains = [
+  "<domain_name1>"
+]
+
+helm_cert_manager_issuer_email = "<issuer_email>"
+
+openvpn_users = ["<vpn_username1>"]
+```
+
+> If the host that runs terraform apply does not have direct access to the VPC,
+> it is recommended to initially also set `helm_deploy_enabled` to `false`, as private cluster is only reachable through
+> VPC or VPN connection and helm deployments will time out. After the deployment runs successfully, connect the host to
+> the VPC/VPN and run apply again with `helm_deploy_enabled` set to `true`.
+
+#### Public cluster
+
+```terraform
+# Variables needed for deployment of the public cluster
+provider_project_id    = "<gcp_project_id>"
+cloud_dns_zone_domains = [
+  "<domain_name1>"
+]
+
+helm_cert_manager_issuer_email = "<issuer_email>"
+
+openvpn_users = ["<vpn_username1>"]
+
+gke_additional_master_authorized_networks = [
+  {
+    cidr_block   = "<trusted_cidr>"
+    display_name = "<user_friendly_name>"
+  }
+]
+gke_private_cluster_enabled               = false
+```
+
+> It is required to add the CIDR of the host that runs terraform apply to the
+> `gke_additional_master_authorized_networks` array in order to be able to deploy the helm charts (if enabled).
+
+## OpenVPN
+
+This module can optionally also deploy the OpenVPN server that can be used to access any VPC internal resources.
+
+VPN users are managed directly in Terraform through the variable `openvpn_users` which is a list of strings where each
+string represents the username of the user.
+
+After successful Terraform apply, OpenVPN config files can be found in local directory `openvpn`.
+
+Actual private key used for the OpenVPN is stored in Terraform state, and it is possible to retrieve all user profiles
+at any time simply by running Terraform apply command.
+
+By default, all the client traffic is routed through the VPN server.
+
+> Output directory `openvpn` is in `.gitignore` so sensitive data such as private keys do not end up versioned in the git repository.
+
+## Ingress, DNS and SSL/TLS
+
+Default ingress controller is `nginx-ingress`, if no explicit annotations are set, this is the ingress controller that
+will be used. Alternatively, it is possible to use built-in GCE ingress with the following
+annotation `kubernetes.io/ingress.class: "gce"` set to Ingress resource.
+
+For the domains specified in `var.cloud_dns_zone_domains` appropriate Cloud DNS zones will be
+created. [`external-dns`](https://github.com/kubernetes-sigs/external-dns) is configured to automagically create DNS
+records.
+
+SSL/TLS Certificate management is handled by [`cert-manager`](https://cert-manager.io/) through Letsencrypt ACME cluster
+issuer.
+
+All the above allows seamless ingress setup that automatically handles path based routing, SSL/TLS certificates,
+CloudDNS external DNS record management.
+
+### Public (External) Ingress examples
+
+Example Ingress manifest utilizing all 3 components:
+
+#### Nginx Ingress Controller
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: service-a
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: service-a.example.com.
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  rules:
+    - host: service-a.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: nginxsvc
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - service-a.example.com
+      secretName: service-a-example-com
+```
+
+> Above manifest will expose service `nginxsvc` on `service-a.example.com` with HTTPS.
+
+#### GCE (GCP native) Ingress Controller
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: service-b
+  annotations:
+    kubernetes.io/ingress.class: "gce"
+    kubernetes.io/ingress.global-static-ip-name: "<global_static_ip_name>"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    external-dns.alpha.kubernetes.io/hostname: "service-b.example.com."
+spec:
+  rules:
+    - host: service-b.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: nginxsvc
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - service-b.example.com
+      secretName: service-b-example-com
+```
+
+> **<global_static_ip_name>** needs to be replaced with the actual name of the global static ip reserved!**
+
+> Above manifest will expose service `nginxsvc` on `service-b.example.com` with HTTPS.
+
+### Private (Internal) Ingress examples
+
+#### Nginx Ingress Controller
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: service-c-internal
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: service-c.internal.example.com.
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: nginx-internal
+  rules:
+    - host: service-c.internal.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: nginxsvc
+                port:
+                  number: 8080
+  tls:
+    - hosts:
+        - service-c.internal.example.com
+      secretName: service-c-internal-example-com
+```
+
+> Above manifest will expose service `nginxsvc` on `service-c.example.com` with HTTPS internally.
+
+#### GCE (GCP native) Internal Ingress Controller
+
+Using `gcp-internal` ingress is possible, but requires additional setup such as proxy-only subnets. More details in
+the [official documentation](https://cloud.google.com/load-balancing/docs/l7-internal).
+
+> For most use-cases using `nginx-internal` ingress is much simpler solution.
+
+## Module details
+
 <!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
 ## Requirements
 
