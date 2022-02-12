@@ -28,9 +28,8 @@ jobs:
       - name: Configure terraform-docs
         run: |
           curl -Lo /tmp/terraform-docs.tar.gz https://github.com/terraform-docs/terraform-docs/releases/download/v0.16.0/terraform-docs-v0.16.0-$(uname)-amd64.tar.gz && \
-          tar -xzf /tmp/terraform-docs.tar.gz && \
-          chmod +x /tmp/terraform-docs && \
-          sudo mv /tmp/terraform-docs /usr/local/bin/terraform-docs
+          sudo tar -xzf terraform-docs.tar.gz -C /usr/local/bin && \
+          sudo chmod +x /usr/local/bin/terraform-docs
       - name: Configure tfsec
         run: sudo curl -Lo /usr/local/bin/tfsec https://github.com/aquasecurity/tfsec/releases/download/v1.1.5/tfsec-checkgen-darwin-amd64
       - run: curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
