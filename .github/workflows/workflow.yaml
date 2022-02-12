@@ -37,4 +37,4 @@ jobs:
       - name: Execute pre-commit
         uses: pre-commit/action@v2.0.0
         with:
-          extra_args: --color=always --show-diff-on-failure
+          extra_args: -a --color=always --show-diff-on-failure
