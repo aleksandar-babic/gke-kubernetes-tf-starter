@@ -99,12 +99,54 @@ variable "gke_cluster_admins" {
   default     = []
 }
 
+variable "gke_regional_cluster_enabled" {
+  type        = bool
+  description = "Flag to either enable regional (true) or zonal (false) mode for cluster."
+  default     = false
+}
+
+variable "gke_private_cluster_enabled" {
+  type        = bool
+  description = "Flag to either enable private endpoint and nodes, or use regular public endpoint and nodes with public ips."
+  default     = true
+}
+
 variable "cloud_dns_zone_domains" {
   type        = list(string)
   description = "List of the domains that should have Cloud DNS zones created."
 }
 
-variable "cert_manager_issuer_email" {
+variable "openvpn_users" {
+  type        = list(string)
+  description = "List of the OpenVPN users to be created. (if list is empty, OpenVPN instance will not be created)"
+  default     = []
+}
+
+variable "helm_deploy_enabled" {
+  type        = bool
+  description = "Flag to enable or disable deployment of the helm-charts module into the cluster."
+  default     = true
+}
+
+variable "helm_cert_manager_issuer_email" {
   type        = string
-  description = "Email to be configured for Letsencrypt ACME notifications."
+  description = "Email to be configured for Letsencrypt ACME notifications. (ignored with helm_deploy_enabled false)"
+}
+
+variable "helm_external_nginx_ingress_enabled" {
+  type        = bool
+  default     = true
+  description = "Flag to enable or disable deployment of the nginx-ingress external ingress controller. (ignored with helm_deploy_enabled false)"
+}
+
+variable "helm_internal_nginx_ingress_enabled" {
+  type        = bool
+  default     = true
+  description = "Flag to enable or disable deployment of the nginx-ingress internal ingress controller. (ignored with helm_deploy_enabled false)"
+}
+
+variable "cloudnat_enabled" {
+  type        = bool
+  description = "Flag to enable or disable deployment of the CloudNat. (required with private cluster)"
+  default     = true
 }

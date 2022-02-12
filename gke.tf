@@ -11,7 +11,7 @@ module "kubernetes-engine" {
   region     = var.provider_region
   name       = local.gke_cluster_name
 
-  regional                          = true
+  regional                          = var.gke_regional_cluster_enabled
   network                           = module.network.network_name
   subnetwork                        = local.gke_subnet_name
   ip_range_pods                     = local.gke_pods
@@ -19,7 +19,9 @@ module "kubernetes-engine" {
   add_cluster_firewall_rules        = true
   add_master_webhook_firewall_rules = true
   add_shadow_firewall_rules         = true
-  enable_private_endpoint           = true
+  enable_private_endpoint           = var.gke_private_cluster_enabled
+  enable_private_nodes              = var.gke_private_cluster_enabled
+  deploy_using_private_endpoint     = var.gke_private_cluster_enabled
   create_service_account            = true
   enable_shielded_nodes             = true
   horizontal_pod_autoscaling        = true

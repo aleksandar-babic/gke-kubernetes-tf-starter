@@ -1,12 +1,12 @@
 resource "google_service_account" "cert_manager_dns_solver" {
-  account_id   = "${local.global_resource_prefix}-cert-manager"
-  display_name = "${local.global_resource_prefix}-cert-manager"
+  account_id   = "${var.global_resource_prefix}-cert-manager"
+  display_name = "${var.global_resource_prefix}-cert-manager"
 }
 
 resource "google_service_account_iam_binding" "cert_manager_dns_solver_workload_identity_cert_manager" {
   service_account_id = google_service_account.cert_manager_dns_solver.id
   role               = "roles/iam.workloadIdentityUser"
-  members            = ["serviceAccount:${var.provider_project_id}.svc.id.goog[cert-manager/cert-manager]"]
+  members            = ["serviceAccount:${var.project_id}.svc.id.goog[cert-manager/cert-manager]"]
 }
 
 resource "google_project_iam_member" "cert_manager_dns_admin" {
@@ -50,7 +50,7 @@ spec:
     solvers:
     - dns01:
         cloudDNS:
-          project: ${var.provider_project_id}
+          project: ${var.project_id}
 YAML
 
   depends_on = [helm_release.cert_manager]

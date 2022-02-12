@@ -66,3 +66,25 @@ module "network" {
     }
   ]
 }
+
+resource "google_compute_router" "this" {
+  count = var.cloudnat_enabled ? 1 : 0
+
+  project = var.provider_project_id
+  name    = "${local.global_resource_prefix}-nat-router"
+  network = module.network.network_name
+  region  = var.provider_region
+}
+
+module "cloud-nat" {
+  count = var.cloudnat_enabled ? 1 : 0
+
+  source  = "registry.terraform.io/terraform-google-modules/cloud-nat/google"
+  version = "~> 2.0.0"
+
+  project_id                         = var.provider_project_id
+  region                             = var.provider_region
+  router                             = google_compute_router.this[0].name
+  name                               = "${local.global_resource_prefix}-nat-config"
+  source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
+}

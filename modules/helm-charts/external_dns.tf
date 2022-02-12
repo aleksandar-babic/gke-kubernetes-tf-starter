@@ -1,12 +1,12 @@
 resource "google_service_account" "external_dns" {
-  account_id   = "${local.global_resource_prefix}-external-dns"
-  display_name = "${local.global_resource_prefix}-external-dns"
+  account_id   = "${var.global_resource_prefix}-external-dns"
+  display_name = "${var.global_resource_prefix}-external-dns"
 }
 
 resource "google_service_account_iam_binding" "external_dns_workload_identity_external_dns" {
   service_account_id = google_service_account.external_dns.id
   role               = "roles/iam.workloadIdentityUser"
-  members            = ["serviceAccount:${var.provider_project_id}.svc.id.goog[external-dns/external-dns]"]
+  members            = ["serviceAccount:${var.project_id}.svc.id.goog[external-dns/external-dns]"]
 }
 
 resource "google_project_iam_member" "external_dns_dns_admin" {
@@ -29,7 +29,7 @@ resource "helm_release" "external_dns" {
 
   set {
     name  = "google.project"
-    value = var.provider_project_id
+    value = var.project_id
   }
 
   set {

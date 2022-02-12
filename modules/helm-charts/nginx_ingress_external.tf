@@ -1,8 +1,12 @@
 resource "google_compute_address" "ingress_external" {
+  count = var.external_nginx_ingress_enabled ? 1 : 0
+
   name = "nginx-ingress-external"
 }
 
 resource "helm_release" "nginx_ingress_external" {
+  count = var.external_nginx_ingress_enabled ? 1 : 0
+
   chart            = "ingress-nginx"
   repository       = "https://kubernetes.github.io/ingress-nginx"
   version          = "4.0.17"
@@ -36,7 +40,7 @@ resource "helm_release" "nginx_ingress_external" {
   }
   set {
     name  = "controller.service.loadBalancerIP"
-    value = google_compute_address.ingress_external.address
+    value = google_compute_address.ingress_external[0].address
   }
   set {
     name  = "controller.daemonset.useHostPort"

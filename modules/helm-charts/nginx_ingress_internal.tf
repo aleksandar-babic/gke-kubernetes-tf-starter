@@ -1,11 +1,15 @@
 resource "google_compute_address" "ingress_internal" {
+  count = var.internal_nginx_ingress_enabled ? 1 : 0
+
   name         = "nginx-ingress-internal"
   address_type = "INTERNAL"
-  subnetwork   = local.gke_subnet_name
+  subnetwork   = var.subnetwork
   purpose      = "SHARED_LOADBALANCER_VIP"
 }
 
 resource "helm_release" "nginx_ingress_internal" {
+  count = var.internal_nginx_ingress_enabled ? 1 : 0
+
   chart            = "ingress-nginx"
   repository       = "https://kubernetes.github.io/ingress-nginx"
   version          = "4.0.17"
@@ -55,7 +59,7 @@ resource "helm_release" "nginx_ingress_internal" {
   }
   set {
     name  = "controller.service.internal.loadBalancerIP"
-    value = google_compute_address.ingress_internal.address
+    value = google_compute_address.ingress_internal[0].address
   }
   set {
     name  = "controller.service.internal.externalTrafficPolicy"

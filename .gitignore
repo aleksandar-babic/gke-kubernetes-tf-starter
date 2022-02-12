@@ -30,3 +30,6 @@ override.tf.json
 
 # Jetbrain IDEs
 .idea
+
+# OpenVPN client config directory
+openvpn
