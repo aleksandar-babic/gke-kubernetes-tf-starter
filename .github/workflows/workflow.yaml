@@ -32,7 +32,7 @@ jobs:
           sudo chmod +x /usr/local/bin/terraform-docs
       - name: Configure tfsec
         run: |
-          sudo curl -Lo /usr/local/bin/tfsec https://github.com/aquasecurity/tfsec/releases/download/v1.1.5/tfsec-checkgen-linux-amd64 && \
+          sudo curl -Lo /usr/local/bin/tfsec https://github.com/aquasecurity/tfsec/releases/download/v1.1.5/tfsec-linux-amd64 && \
           sudo chmod +x /usr/local/bin/tfsec
       - run: curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
       - name: Execute pre-commit
