@@ -30,7 +30,6 @@ repos:
         args:
           - modules/helm-charts/README.md
       - id: terraform_validate
-      - id: terraform_tflint
       - id: checkov
         args: [ "-d", ".", "--skip-path", ".terraform" ]
       - id: terraform_tflint

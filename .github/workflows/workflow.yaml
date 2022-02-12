@@ -1,0 +1,34 @@
+name: Main workflow action
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: 1.1.5
+      - name: Terraform Init
+        id: init
+        run: terraform init -backend=false
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - uses: BSFishy/pip-action@v1
+        with:
+          packages: |
+            checkov
+      - uses: actions/setup-go@v2
+      - run: go install github.com/terraform-docs/terraform-docs@v0.16.0
+      - run: go install github.com/aquasecurity/tfsec/cmd/tfsec@latest
+      - run: curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+      - name: Execute pre-commit
+        uses: pre-commit/action@v2.0.0
+        with:
+          extra_args: --color=always --show-diff-on-failure
