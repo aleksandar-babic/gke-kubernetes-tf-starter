@@ -25,8 +25,14 @@ jobs:
           packages: |
             checkov
       - uses: actions/setup-go@v2
-      - run: GO111MODULE="on" go get github.com/terraform-docs/terraform-docs
-      - run: GO111MODULE="on" go get github.com/aquasecurity/tfsec/cmd/tfsec
+      - name: Configure terraform-docs
+        run: |
+          curl -Lo ./terraform-docs.tar.gz https://github.com/terraform-docs/terraform-docs/releases/download/v0.16.0/terraform-docs-v0.16.0-$(uname)-amd64.tar.gz && \
+          tar -xzf terraform-docs.tar.gz && \
+          chmod +x terraform-docs && \
+          mv terraform-docs /usr/local/terraform-docs
+      - name: Configure tfsec
+        run: curl -Lo /usr/local/bin/tfsec https://github.com/aquasecurity/tfsec/releases/download/v1.1.5/tfsec-checkgen-darwin-amd64
       - run: curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
       - name: Execute pre-commit
         uses: pre-commit/action@v2.0.0
