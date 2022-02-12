@@ -25,8 +25,8 @@ jobs:
           packages: |
             checkov
       - uses: actions/setup-go@v2
-      - run: go install github.com/terraform-docs/terraform-docs
-      - run: go install github.com/aquasecurity/tfsec/cmd/tfsec
+      - run: GO111MODULE="on" go get github.com/terraform-docs/terraform-docs
+      - run: GO111MODULE="on" go get github.com/aquasecurity/tfsec/cmd/tfsec
       - run: curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
       - name: Execute pre-commit
         uses: pre-commit/action@v2.0.0
