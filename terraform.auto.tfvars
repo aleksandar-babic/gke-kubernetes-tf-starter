@@ -29,5 +29,3 @@ gke_node_pools = [
     enable_secure_boot          = true
   },
 ]
-
-gke_initial_node_count = 1
