@@ -38,8 +38,8 @@ variable "subnet_cidrs" {
 
 variable "gke_initial_node_count" {
   type        = number
-  description = "Number of the cluster nodes deployed initially."
-  default     = 3
+  description = "Number of the cluster nodes deployed initially in default node pool."
+  default     = 0
 }
 
 variable "gke_kubernetes_version" {
