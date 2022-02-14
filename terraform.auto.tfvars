@@ -27,5 +27,7 @@ gke_node_pools = [
     cpu_cfs_quota               = true
     enable_integrity_monitoring = true
     enable_secure_boot          = true
+    image_type                  = "COS_CONTAINERD"
+
   },
 ]

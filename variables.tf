@@ -80,6 +80,7 @@ variable "gke_node_pools" {
     cpu_cfs_quota               = bool
     enable_integrity_monitoring = bool
     enable_secure_boot          = bool
+    image_type                  = string
   }))
   description = "Node pools to be created for the GKE cluster."
 }
