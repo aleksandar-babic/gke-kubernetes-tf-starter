@@ -1,7 +1,7 @@
 resource "google_compute_address" "ingress_external" {
   count = var.external_nginx_ingress_enabled ? 1 : 0
 
-  name = "nginx-ingress-external"
+  name = "${var.global_resource_prefix}-nginx-ingress-external"
 }
 
 resource "helm_release" "nginx_ingress_external" {

@@ -1,7 +1,7 @@
 resource "google_compute_address" "ingress_internal" {
   count = var.internal_nginx_ingress_enabled ? 1 : 0
 
-  name         = "nginx-ingress-internal"
+  name         = "${var.global_resource_prefix}-nginx-ingress-internal"
   address_type = "INTERNAL"
   subnetwork   = var.subnetwork
   purpose      = "SHARED_LOADBALANCER_VIP"

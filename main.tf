@@ -11,8 +11,8 @@ module "helm_charts" {
   subnetwork                     = local.gke_subnet_name
   cert_manager_issuer_email      = var.helm_cert_manager_issuer_email
   global_resource_prefix         = local.global_resource_prefix
-  external_nginx_ingress_enabled = true
-  internal_nginx_ingress_enabled = true
+  external_nginx_ingress_enabled = var.helm_external_nginx_ingress_enabled
+  internal_nginx_ingress_enabled = var.helm_internal_nginx_ingress_enabled
 
   depends_on = [module.openvpn[0]]
 }
